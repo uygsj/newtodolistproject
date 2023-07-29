@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>To-Do List</h1>
+
+  <div>
+    <input type="text" id="todoName" placeholder="Todo Name">
+    <input type="text" id="todoDescription" placeholder="Todo Description">
+    <button onclick="addItem()">Add Item</button>
+  </div>
+
+  <h2>Task Remain</h2>
+  <ul id="taskRemainList"></ul>
+
+  <h2>Task Done</h2>
+  <ul id="taskDoneList"></ul>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.2.2/axios.min.js"></script>
+
+  <script>
+    let todos = [];
+
+    function loadTodoData() {
+      axios.get("https://crudcrud.com/api/f2ee40e09d854007b14c8c7f043811b5/todoData")
+        .then((response) => {
+          todos = response.data;
+          displayTodoLists();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+
+    function displayTodoLists() {
+      const taskRemainList = document.getElementById('taskRemainList');
+      const taskDoneList = document.getElementById('taskDoneList');
+      taskRemainList.innerHTML = '';
+      taskDoneList.innerHTML = '';
+
+      todos.forEach((todoItem, index) => {
+        const listItem = createListItem(todoItem, index);
+        if (todoItem.status === 'Task Done') {
+          taskDoneList.appendChild(listItem);
+        } else {
+          taskRemainList.appendChild(listItem);
+        }
+      });
+    }
+
+    function createListItem(todoItem, index) {
+      const listItem = document.createElement('li');
+      const todoTextDiv = document.createElement('div');
+      todoTextDiv.innerText = `${todoItem.name}: ${todoItem.description}`;
+
+      const rightButton = document.createElement('button');
+      rightButton.innerText = '✓'; 
+      rightButton.onclick = () => updateItemStatus(index, 'Task Done');
+
+      const wrongButton = document.createElement('button');
+      wrongButton.innerText = '✗'; 
+      wrongButton.onclick = () => updateItemStatus(index, 'Task Remain');
+
+      listItem.appendChild(todoTextDiv);
+      listItem.appendChild(rightButton);
+      listItem.appendChild(wrongButton);
+
+      return listItem;
+    }
+
+    function addItem() {
+      const todoNameInput = document.getElementById('todoName');
+      const todoDescriptionInput = document.getElementById('todoDescription');
+
+      const todoName = todoNameInput.value;
+      const todoDescription = todoDescriptionInput.value;
+
+      const todoItem = {
+        name: todoName,
+        description: todoDescription,
+        status: 'Task Remain'
+      };
+
+      axios.post("https://crudcrud.com/api/f2ee40e09d854007b14c8c7f043811b5/todoData", todoItem)
+        .then((response) => {
+          todos.push(response.data);
+          displayTodoLists();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+
+      todoNameInput.value = '';
+      todoDescriptionInput.value = '';
+    }
+
+    function updateItemStatus(index, status) {
+      todos[index].status = status;
+
+      axios.put(`https://crudcrud.com/api/f2ee40e09d854007b14c8c7f043811b5/todoData/${todos[index]._id}`, {
+        name: todos[index].name,
+        description: todos[index].description,
+        status: status,
+      })
+      .then((response) => {
+        displayTodoLists(); 
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    }
+
+    loadTodoData();
+  </script>
+</body>
+</html>
